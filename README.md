@@ -1,10 +1,11 @@
+<!-- markdownlint-disable -->
 
 <p align="center"><h1 align="center">
   url-sheriff
 </h1>
 
 <p align="center">
-  protect against SSRF vulnerabilities by validating URLs
+  validate and prevent against SSRF
 </p>
 
 <p align="center">
@@ -17,31 +18,24 @@
   <a href="./SECURITY.md"><img src="https://img.shields.io/badge/Security-Responsible%20Disclosure-yellow.svg" alt="Responsible Disclosure Policy" /></a>
 </p>
 
-# About
-
-protect against SSRF vulnerabilities by validating URLs
-
-# Install
+## Install
 
 ```bash
-npm add url-sheriff
+npm ({ npmClient }) =&gt; {
+      return npmClient === &#39;npm&#39; ? &#39;install&#39; : &#39;add&#39;
+    } url-sheriff
 ```
+## Usage: CLI
 
-# Usage
-
-```js
+```bash
 // @TODO
 const {} = require('url-sheriff')
 ```
 
-# Example
+## Contributing
 
-<!-- TODO -->
+Please consult [CONTRIBUTING](./.github/CONTRIBUTING.md) for guidelines on contributing to this project.
 
-# Contributing
-
-Please consult [CONTRIBUTING](./CONTRIBUTING.md) for guidelines on contributing to this project.
-
-# Author
+## Author
 
 **url-sheriff** © [Liran Tal](https://github.com/lirantal), Released under the [Apache-2.0](./LICENSE) License.
