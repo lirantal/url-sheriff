@@ -1,17 +1,23 @@
 import { test, describe, beforeEach, mock } from 'node:test'
 import assert from 'node:assert'
-import { add } from '../src/main.ts'
+import { sheriff } from '../src/main.ts'
 
-describe('CLI program', () => {
+describe('SSRF program API', () => {
 
   beforeEach(() => {
-    // Reset the mocks before each test
     mock.reset()
   });
 
-  test('Program sums two arguments', async (t) => {
-    const result = await add(1, 1);
-    assert.strictEqual(result, 2);
+  test('If a URL uses a host set to a localhost IP address, an exception is thrown', async (t) => {
+
+    await assert.rejects(
+      sheriff('http://localhost:3000'),
+      {
+        name: 'Error',
+        message: 'URL uses a host set to a localhost IP'
+      }
+    )
+
   })
 
 });

@@ -4,7 +4,6 @@
   "description": "validate and prevent against SSRF",
   "types": "dist/main.d.ts",
   "type": "module",
-  "bin": "./dist/bin/cli.cjs",
   "exports": {
     ".": {
       "import": {
@@ -24,13 +23,12 @@
     }
   },
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=22.0.0"
   },
   "packageManager": "npm@8.4.0",
   "files": [
     "dist",
-    "src",
-    "bin"
+    "src"
   ],
   "scripts": {
     "build": "tsc && tsup",

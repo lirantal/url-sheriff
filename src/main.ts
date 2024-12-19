@@ -1,3 +1,8 @@
-export async function add(arg1: number, arg2: number): Promise<number> {
-  return Promise.resolve(arg1 + arg2)
+export async function sheriff(url: string): Promise<boolean> {
+
+  if (url.includes('localhost')) {
+    throw new Error('URL uses a host set to a localhost IP')
+  }
+
+  return true;
 }

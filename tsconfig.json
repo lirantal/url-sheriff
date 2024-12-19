@@ -24,8 +24,7 @@
     "removeComments": true,
   },
   "include": [
-    "src/**/*",
-    "src/bin/**/*"
+    "src/**/*"
   ],
   "exclude": [
     "dist",
