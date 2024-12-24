@@ -1,15 +1,21 @@
-import { URL } from 'url';
+import { URL } from 'url'
+import { Resolver } from 'node:dns/promises'
+import ipaddress from 'ipaddr.js'
 
-export class UrlSheriff {
+export default class URLSheriff {
   #config: object
 
   constructor(config: object) {
     this.#config = config
   }
 
-  #getParsedUrl(url: string | URL): URL {
+  #getParsedURL(url: string | URL): URL {
     if (typeof url === 'string') {
-      return new URL(url)
+      try {
+        return new URL(url)
+      } catch (error) {
+        throw new Error('Invalid URL provided')
+      }
     }
 
     if (url instanceof URL) {
@@ -19,45 +25,65 @@ export class UrlSheriff {
     throw new Error('Invalid URL provided')
   }
 
-  async isSafe(url: string | URL): Promise<boolean> {
+  /**
+   * isSafe checks if a URL is safe to use or could result in a potential SSRF
+   * 
+   * SSRF Validation process:
+   * 1. Ensure the string provided is a valid URL structure
+   * 2. If the URL relies on an IP address, check if it is a private IP address
+   * 3. If the URL relies on a hostname, resolve it, and check if it is a private IP address
+   * 
+   * @param url 
+   * @returns boolean
+   */
+  async isSafeURL(url: string | URL): Promise<boolean> {
 
-    let parsedUrl = this.#getParsedUrl(url)
+    const parsedUrl = this.#getParsedURL(url)
+    const hostname = parsedUrl.hostname
 
-    if (this.#isPrivateHostname(parsedUrl.hostname)) {
+    // as a short-circuit for performance we assume the hostname is an IP address
+    // and validate if it is a valid one, then check if it is a private IP address
+    if (ipaddress.isValid(hostname)) {
+      if (this.isPrivateIPAddress(hostname)) {
+        throw new Error('URL uses a private hostname')
+      }
+      return true
+    }
+
+    // if it's not a valid ip address as a hostname in the URL, we 
+    // perform a DNS lookup to resolve the hostname to an IP address in the most
+    // performance efficient way possible and then check if the resolved IP address
+    // is a private IP address
+    const ipAddressList = await this.hostnameLookup(hostname)
+    const anyIPAddressIsPrivate: boolean = ipAddressList.some(ipAddress => {
+      return this.isPrivateIPAddress(ipAddress)
+    })
+
+    if (anyIPAddressIsPrivate) {
       throw new Error('URL uses a private hostname')
     }
 
-    return true
+    return true;
   }
 
-  #isPrivateHostname(hostname: string): boolean {
+  isPrivateIPAddress(ipAddress: string): boolean {
+    const ip = ipaddress.parse(ipAddress)
+    if (ip.range() !== 'unicast') {
+      return true
+    }
 
-    const privateHostnames: string[] = [
-      'localhost',
-      '127',
-      '169.254',
-      '10',
-      '172.16',
-      '192.168',
-      '100.64',
-    ]
-
-    return privateHostnames.some((privateHostname) => {
-      return hostname.startsWith(privateHostname)
-    })
+    return false
   }
+
+  /**
+   * 
+   * @param hostname the hostname to perform a DNS lookup for
+   * @returns string[] the list of resolved IP addresses
+   */
+  async hostnameLookup(hostname: string): Promise<string[]> {
+    const resolver = new Resolver()
+    const ipAddressList: string[] = await resolver.resolve4(hostname)
+    return ipAddressList
+  }
+
 }
-
-/**
- * Features to support:
- * 1. add an allow-list of domains or ips that are allowed
- * 1.1. domain list can be string literals or regex to match against
- *
- *
- * Security controls:
- * 1. runs IP address string matching (127.0.0.1 etc)
- * 2. runs hostname string matching (localhost etc)
- * 3. resolves the provided hostname to an IP address and runs the IP address string matching
- * 4. check if IP is a public IP address namespace
- * 5. a check that tests against DNS rebinding attacks
- */

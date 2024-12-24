@@ -82,5 +82,8 @@
     "**/*.{js,json}": [
       "npm run lint:fix"
     ]
+  },
+  "dependencies": {
+    "ipaddr.js": "^2.2.0"
   }
 }

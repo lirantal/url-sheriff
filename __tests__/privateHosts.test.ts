@@ -1,6 +1,6 @@
 import { test, describe, beforeEach, mock } from 'node:test'
 import assert from 'node:assert'
-import { UrlSheriff } from '../src/main.ts'
+import URLSheriff from '../src/main.ts'
 
 describe('SSRF Private Hosts Test Suite', () => {
 
@@ -10,10 +10,10 @@ describe('SSRF Private Hosts Test Suite', () => {
 
   test('If a URL uses a host set to a localhost IP address, an exception is thrown', async (t) => {
 
-    const sheriff = new UrlSheriff({})
+    const sheriff = new URLSheriff()
 
     await assert.rejects(
-      sheriff.isSafe('http://127.0.0.1:3000'),
+      sheriff.isSafeURL('http://127.0.0.1:3000'),
       {
         name: 'Error',
         message: 'URL uses a private hostname'
@@ -24,10 +24,10 @@ describe('SSRF Private Hosts Test Suite', () => {
 
   test('If a URL uses a host set to a localhost domain, an exception is thrown', async (t) => {
 
-    const sheriff = new UrlSheriff({})
+    const sheriff = new URLSheriff({})
 
     await assert.rejects(
-      sheriff.isSafe('http://localhost:3000'),
+      sheriff.isSafeURL('http://localhost:3000'),
       {
         name: 'Error',
         message: 'URL uses a private hostname'
@@ -37,14 +37,14 @@ describe('SSRF Private Hosts Test Suite', () => {
   })
 
   test('If a URL uses a public hostname then it is allowed', async (t) => {
-    const sheriff = new UrlSheriff({})
-    const isSafe = await sheriff.isSafe('https://example.com')
+    const sheriff = new URLSheriff({})
+    const isSafe = await sheriff.isSafeURL('https://example.com')
     assert.strictEqual(isSafe, true);
   })
 
   test('If a URL uses a public IP address in the range of 172.32.0.0 then it should be allowed', async (t) => {
-    const sheriff = new UrlSheriff({})
-    const isSafe = await sheriff.isSafe('https://172.32.1.2')
+    const sheriff = new URLSheriff({})
+    const isSafe = await sheriff.isSafeURL('https://172.32.1.2')
     assert.strictEqual(isSafe, true);
   })
 
