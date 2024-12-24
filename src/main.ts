@@ -5,7 +5,7 @@ import ipaddress from 'ipaddr.js'
 export default class URLSheriff {
   #config: object
 
-  constructor(config: object) {
+  constructor(config: object = {}) {
     this.#config = config
   }
 
