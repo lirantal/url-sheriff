@@ -2,7 +2,7 @@ import { test, describe, beforeEach, mock } from 'node:test'
 import assert from 'node:assert'
 import URLSheriff from '../src/main.ts'
 
-describe('SSRF Private Hosts Test Suite', () => {
+describe('SSRF isSafeURL Sanity suite #1', () => {
 
   beforeEach(() => {
     mock.reset()

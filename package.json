@@ -37,6 +37,7 @@
     "lint:lockfile": "lockfile-lint --path package-lock.json --validate-https --allowed-hosts npm yarn",
     "test": "c8 node --loader ts-node/esm --test __tests__/**",
     "test:watch": "c8 node --loader ts-node/esm --test --watch __tests__/**",
+    "bench": "node --allow-natives-syntax __bench__/bench.test.mjs",
     "coverage:view": "open coverage/lcov-report/index.html",
     "version": "changeset version",
     "release": "changeset publish"
@@ -66,6 +67,7 @@
     "@changesets/changelog-github": "^0.5.0",
     "@changesets/cli": "^2.27.7",
     "@types/node": "^20.14.10",
+    "bench-node": "^0.4.1",
     "c8": "^10.1.2",
     "eslint": "^9.6.0",
     "eslint-plugin-security": "^3.0.1",
