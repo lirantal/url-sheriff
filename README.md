@@ -1,7 +1,7 @@
 <!-- markdownlint-disable -->
 
 <p align="center"><h1 align="center">
-  url-sheriff
+  URL Sheriff
 </h1>
 
 <p align="center">
@@ -20,17 +20,35 @@
 
 ## Install
 
-```bash
-npm ({ npmClient }) =&gt; {
-      return npmClient === &#39;npm&#39; ? &#39;install&#39; : &#39;add&#39;
-    } url-sheriff
+```sh
+npm install --save url-sheriff
 ```
 ## Usage: CLI
 
-```bash
-// @TODO
-const {} = require('url-sheriff')
+```js
+import URLSheriff from 'url-sheriff'
+
+// initialize
+const sheriff = new URLSheriff()
+
+// this will throw an Error exception
+sheriff.isSafeURL('http://127.0.0.1:3000')
 ```
+
+## TODO
+
+Features to support:
+
+1. add an allow-list of domains or ips that are allowed
+1.1. domain list can be string literals or regex to match against
+
+Security controls:
+
+1. runs IP address string matching (127.0.0.1 etc)
+2. runs hostname string matching (localhost etc)
+3. resolves the provided hostname to an IP address and runs the IP address string matching
+4. check if IP is a public IP address namespace
+5. a check that tests against DNS rebinding attacks 
 
 ## Contributing
 
