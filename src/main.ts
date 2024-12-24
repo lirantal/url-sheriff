@@ -3,12 +3,6 @@ import { URL } from 'url';
 export class UrlSheriff {
   #config: object
 
-  #privateHostnames: string[] = [
-    'localhost',
-    '127',
-    '169'
-  ]
-
   constructor(config: object) {
     this.#config = config
   }
@@ -29,15 +23,28 @@ export class UrlSheriff {
 
     let parsedUrl = this.#getParsedUrl(url)
 
-    const isPrivateHost = this.#privateHostnames.some((privateHostname) => {
-      return parsedUrl.hostname.startsWith(privateHostname)
-    })
-
-    if (isPrivateHost) {
+    if (this.#isPrivateHostname(parsedUrl.hostname)) {
       throw new Error('URL uses a private hostname')
     }
 
     return true
+  }
+
+  #isPrivateHostname(hostname: string): boolean {
+
+    const privateHostnames: string[] = [
+      'localhost',
+      '127',
+      '169.254',
+      '10',
+      '172.16',
+      '192.168',
+      '100.64',
+    ]
+
+    return privateHostnames.some((privateHostname) => {
+      return hostname.startsWith(privateHostname)
+    })
   }
 }
 

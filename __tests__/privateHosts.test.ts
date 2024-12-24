@@ -42,4 +42,10 @@ describe('SSRF Private Hosts Test Suite', () => {
     assert.strictEqual(isSafe, true);
   })
 
+  test('If a URL uses a public IP address in the range of 172.32.0.0 then it should be allowed', async (t) => {
+    const sheriff = new UrlSheriff({})
+    const isSafe = await sheriff.isSafe('https://172.32.1.2')
+    assert.strictEqual(isSafe, true);
+  })
+
 });
