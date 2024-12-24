@@ -35,21 +35,6 @@ const sheriff = new URLSheriff()
 sheriff.isSafeURL('http://127.0.0.1:3000')
 ```
 
-## TODO
-
-Features to support:
-
-1. add an allow-list of domains or ips that are allowed
-1.1. domain list can be string literals or regex to match against
-
-Security controls:
-
-1. runs IP address string matching (127.0.0.1 etc)
-2. runs hostname string matching (localhost etc)
-3. resolves the provided hostname to an IP address and runs the IP address string matching
-4. check if IP is a public IP address namespace
-5. a check that tests against DNS rebinding attacks 
-
 ## Contributing
 
 Please consult [CONTRIBUTING](./.github/CONTRIBUTING.md) for guidelines on contributing to this project.
