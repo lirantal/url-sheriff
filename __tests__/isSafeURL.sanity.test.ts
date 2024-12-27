@@ -48,4 +48,19 @@ describe('SSRF isSafeURL Sanity suite #1', () => {
     assert.strictEqual(isSafe, true);
   })
 
+  test.skip('If a URL uses an IPv4 Mapped address via IPv6 that turns out to be reserved, throw the exception', async (t) => {
+    // this doesn't yet pass because it the ipv6 address doesn't get passed through new URL() anyway
+
+    const sheriff = new URLSheriff({})
+
+    await assert.rejects(
+      sheriff.isSafeURL('https://::ffff:192.0.2.128:3000'),
+      {
+        name: 'Error',
+        message: 'URL uses a private hostname'
+      }
+    )
+  });
+
+
 });

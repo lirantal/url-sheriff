@@ -1,5 +1,5 @@
 import { URL } from 'url'
-import { Resolver } from 'node:dns/promises'
+import { Resolver, lookup } from 'node:dns/promises'
 import ipaddress from 'ipaddr.js'
 
 export default class URLSheriff {
@@ -67,7 +67,12 @@ export default class URLSheriff {
   }
 
   isPrivateIPAddress(ipAddress: string): boolean {
-    const ip = ipaddress.parse(ipAddress)
+    let ip = ipaddress.parse(ipAddress)
+
+    if (ip instanceof ipaddress.IPv6 && ip.isIPv4MappedAddress()) {
+      ip = ip.toIPv4Address()
+    }
+
     if (ip.range() !== 'unicast') {
       return true
     }
@@ -81,6 +86,19 @@ export default class URLSheriff {
    * @returns string[] the list of resolved IP addresses
    */
   async hostnameLookup(hostname: string): Promise<string[]> {
+    const ipAddressListDetails: object[] = await lookup(hostname, { all: true })
+    const ipAddressList = ipAddressListDetails.map(ipAddressDetails => {
+      return ipAddressDetails.address
+    })
+    return ipAddressList
+  }
+
+  /**
+   * 
+   * @param hostname the hostname to perform a DNS lookup for
+   * @returns string[] the list of resolved IP addresses
+   */
+  async resolveHostnameViaServers(hostname: string): Promise<string[]> {
     const resolver = new Resolver()
     const ipAddressList: string[] = await resolver.resolve4(hostname)
     return ipAddressList
