@@ -2,11 +2,21 @@ import { URL } from 'url'
 import { Resolver, lookup } from 'node:dns/promises'
 import ipaddress from 'ipaddr.js'
 
-export default class URLSheriff {
-  #config: object
+interface URLSheriffConfig {
+  dnsResolvers?: string[]
+}
 
-  constructor(config: object = {}) {
+export default class URLSheriff {
+  #config: URLSheriffConfig
+  #resolver?: Resolver
+
+  constructor(config: URLSheriffConfig = {}) {
     this.#config = config
+
+    if (this.#config.dnsResolvers) {
+      this.#resolver = new Resolver()
+      this.#resolver.setServers(this.#config.dnsResolvers)
+    }
   }
 
   #getParsedURL(url: string | URL): URL {
@@ -54,7 +64,14 @@ export default class URLSheriff {
     // perform a DNS lookup to resolve the hostname to an IP address in the most
     // performance efficient way possible and then check if the resolved IP address
     // is a private IP address
-    const ipAddressList = await this.hostnameLookup(hostname)
+
+    let ipAddressList: string[] = []
+    if (this.#resolver) {
+      ipAddressList = await this.resolveHostnameViaServers(hostname)
+    } else {
+      ipAddressList = await this.hostnameLookup(hostname)
+    }
+    
     const anyIPAddressIsPrivate: boolean = ipAddressList.some(ipAddress => {
       return this.isPrivateIPAddress(ipAddress)
     })
@@ -99,8 +116,7 @@ export default class URLSheriff {
    * @returns string[] the list of resolved IP addresses
    */
   async resolveHostnameViaServers(hostname: string): Promise<string[]> {
-    const resolver = new Resolver()
-    const ipAddressList: string[] = await resolver.resolve4(hostname)
+    const ipAddressList: string[] = await this.#resolver.resolve4(hostname)
     return ipAddressList
   }
 

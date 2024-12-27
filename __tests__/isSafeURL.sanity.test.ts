@@ -48,6 +48,14 @@ describe('SSRF isSafeURL Sanity suite #1', () => {
     assert.strictEqual(isSafe, true);
   })
 
+  test('Providing custom DNS resolver servers will use them', async (t) => {
+    const sheriff = new URLSheriff({
+      dnsResolvers: ['1.1.1.1', '8.8.8.8']
+    })
+    const isSafe = await sheriff.isSafeURL('https://example.com')
+    assert.strictEqual(isSafe, true);
+  })
+
   test.skip('If a URL uses an IPv4 Mapped address via IPv6 that turns out to be reserved, throw the exception', async (t) => {
     // this doesn't yet pass because it the ipv6 address doesn't get passed through new URL() anyway
 
