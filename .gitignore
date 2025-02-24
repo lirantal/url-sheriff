@@ -106,3 +106,7 @@ typings/
 # Snyk Code
 
 .dccache
+
+# dist directory for typescript build
+
+dist/
