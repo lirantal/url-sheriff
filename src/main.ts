@@ -1,6 +1,7 @@
 import { URL } from 'url'
 import { Resolver, lookup } from 'node:dns/promises'
 import ipaddress from 'ipaddr.js'
+import { LookupAddress } from 'node:dns'
 
 interface URLSheriffConfig {
   dnsResolvers?: string[]
@@ -103,7 +104,7 @@ export default class URLSheriff {
    * @returns string[] the list of resolved IP addresses
    */
   async hostnameLookup(hostname: string): Promise<string[]> {
-    const ipAddressListDetails: object[] = await lookup(hostname, { all: true })
+    const ipAddressListDetails: LookupAddress[] = await lookup(hostname, { all: true })
     const ipAddressList = ipAddressListDetails.map(ipAddressDetails => {
       return ipAddressDetails.address
     })
@@ -116,6 +117,10 @@ export default class URLSheriff {
    * @returns string[] the list of resolved IP addresses
    */
   async resolveHostnameViaServers(hostname: string): Promise<string[]> {
+    if (!this.#resolver) {
+      throw new Error('DNS resolver is not defined');
+    }
+    
     const ipAddressList: string[] = await this.#resolver.resolve4(hostname)
     return ipAddressList
   }
