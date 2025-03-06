@@ -48,4 +48,37 @@ describe('DNS Resolver Tests', () => {
       }
     )
   })
+
+  test('Should handle invalid DNS resolver addresses appropriately', async (t) => {
+    // Arrange
+    const invalidIpAddress = '999.999.999.999'
+    
+    // Act & Assert
+    assert.throws(
+      () => {
+        new URLSheriff({
+          dnsResolvers: [invalidIpAddress]
+        })
+      },
+      {
+        name: 'TypeError',
+        code: 'ERR_INVALID_IP_ADDRESS'
+      },
+      'Should throw a TypeError when an invalid IP address is provided as DNS resolver'
+    )
+    
+    // Test with non-IP string
+    assert.throws(
+      () => {
+        new URLSheriff({
+          dnsResolvers: ['not-an-ip-address']
+        })
+      },
+      {
+        name: 'TypeError',
+        code: 'ERR_INVALID_IP_ADDRESS'
+      },
+      'Should throw a TypeError when a non-IP string is provided as DNS resolver'
+    )
+  })
 })
