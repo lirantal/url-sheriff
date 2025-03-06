@@ -69,6 +69,4 @@ describe('SSRF isSafeURL Sanity suite #1', () => {
       }
     )
   });
-
-
 });
