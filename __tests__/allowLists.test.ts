@@ -118,7 +118,6 @@ describe('Allow-list Tests', () => {
         (error as Error).message.includes('private hostname'),
         'Error should mention private hostname issue'
       )
-    }
     } finally {
       // Restore the original method
       sheriff.hostnameLookup = originalHostnameLookup
