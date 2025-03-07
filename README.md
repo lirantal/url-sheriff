@@ -23,7 +23,9 @@
 ```sh
 npm install --save url-sheriff
 ```
-## Usage: CLI
+## Usage
+
+### Basic Usage
 
 ```js
 import URLSheriff from 'url-sheriff'
@@ -34,6 +36,66 @@ const sheriff = new URLSheriff()
 // this will throw an Error exception
 sheriff.isSafeURL('http://127.0.0.1:3000')
 ```
+
+### Using Custom DNS Resolvers
+
+You can specify custom DNS resolvers to use when resolving hostnames:
+
+```js
+import URLSheriff from 'url-sheriff'
+
+const sheriff = new URLSheriff({
+  dnsResolvers: ['1.1.1.1', '8.8.8.8']
+})
+
+// Will use the specified DNS resolvers for hostname lookups
+await sheriff.isSafeURL('https://example.com')
+```
+
+### Using Allow-lists
+
+URL Sheriff supports allow-lists to specify domains or IP addresses that should be considered safe, even if they would normally be flagged as private or internal.
+
+#### Initializing with an Allow-list
+
+```js
+import URLSheriff from 'url-sheriff'
+
+const sheriff = new URLSheriff({
+  allowList: [
+    'localhost',                    // String literal
+    '127.0.0.1',                    // IP address
+    /^.*\.internal\.company\.com$/  // RegExp pattern
+  ]
+})
+
+// This will now return true instead of throwing an error
+const isSafe = await sheriff.isSafeURL('http://localhost:3000')
+```
+
+#### Managing the Allow-list
+
+You can add or remove entries from the allow-list after initialization:
+
+```js
+// Add new entries to the allow-list
+sheriff.addToAllowList(['trusted-domain.com', /^api-\d+\.example\.org$/])
+
+// Remove entries from the allow-list
+sheriff.removeFromAllowList(['no-longer-trusted.com'])
+
+// Get the current allow-list
+const currentAllowList = sheriff.getAllowList()
+```
+
+#### How the Allow-list Works
+
+1. When checking if a URL is safe, the hostname is first checked against the allow-list.
+2. If the hostname matches any entry in the allow-list (either a string literal or a regex pattern), the URL is immediately considered safe.
+3. If the hostname doesn't match any entry in the allow-list, the normal safety checks proceed:
+   - Check if the hostname is a valid IP address and if it's private
+   - Resolve the hostname to IP addresses and check if any are private
+4. Additionally, if any of the resolved IP addresses match entries in the allow-list, the URL is considered safe.
 
 ## Contributing
 
