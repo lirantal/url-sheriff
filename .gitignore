@@ -110,3 +110,5 @@ typings/
 # dist directory for typescript build
 
 dist/
+
+.qodo/
