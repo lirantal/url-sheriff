@@ -5,14 +5,17 @@ import { LookupAddress } from 'node:dns'
 
 interface URLSheriffConfig {
   dnsResolvers?: string[]
+  allowList?: Array<string | RegExp>
 }
 
 export default class URLSheriff {
   #config: URLSheriffConfig
   #resolver?: Resolver
+  #allowList: Array<string | RegExp>
 
   constructor(config: URLSheriffConfig = {}) {
     this.#config = config
+    this.#allowList = config.allowList || []
 
     if (this.#config.dnsResolvers) {
       this.#resolver = new Resolver()
@@ -37,20 +40,43 @@ export default class URLSheriff {
   }
 
   /**
+   * Checks if a hostname or IP address matches any entry in the allow-list
+   * 
+   * @param value The hostname or IP address to check
+   * @returns boolean True if the value matches an entry in the allow-list
+   */
+  #isInAllowList(value: string): boolean {
+    return this.#allowList.some(entry => {
+      if (typeof entry === 'string') {
+        return entry === value
+      }
+      if (entry instanceof RegExp) {
+        return entry.test(value)
+      }
+      return false
+    })
+  }
+
+  /**
    * isSafe checks if a URL is safe to use or could result in a potential SSRF
    * 
    * SSRF Validation process:
    * 1. Ensure the string provided is a valid URL structure
-   * 2. If the URL relies on an IP address, check if it is a private IP address
-   * 3. If the URL relies on a hostname, resolve it, and check if it is a private IP address
+   * 2. Check if the hostname is in the allow-list
+   * 3. If the URL relies on an IP address, check if it is a private IP address
+   * 4. If the URL relies on a hostname, resolve it, and check if it is a private IP address
    * 
    * @param url 
    * @returns boolean
    */
   async isSafeURL(url: string | URL): Promise<boolean> {
-
     const parsedUrl = this.#getParsedURL(url)
     const hostname = parsedUrl.hostname
+
+    // Check if the hostname is in the allow-list
+    if (this.#isInAllowList(hostname)) {
+      return true
+    }
 
     // as a short-circuit for performance we assume the hostname is an IP address
     // and validate if it is a valid one, then check if it is a private IP address
@@ -71,6 +97,12 @@ export default class URLSheriff {
       ipAddressList = await this.resolveHostnameViaServers(hostname)
     } else {
       ipAddressList = await this.hostnameLookup(hostname)
+    }
+    
+    // Check if any of the resolved IP addresses are in the allow-list
+    const anyIPAddressInAllowList = ipAddressList.some(ipAddress => this.#isInAllowList(ipAddress))
+    if (anyIPAddressInAllowList) {
+      return true
     }
     
     const anyIPAddressIsPrivate: boolean = ipAddressList.some(ipAddress => {
@@ -125,4 +157,40 @@ export default class URLSheriff {
     return ipAddressList
   }
 
+  /**
+   * Add entries to the allow-list
+   * 
+   * @param entries Array of string literals or RegExp patterns to add to the allow-list
+   */
+  addToAllowList(entries: Array<string | RegExp>): void {
+    this.#allowList = [...this.#allowList, ...entries]
+  }
+
+  /**
+   * Remove entries from the allow-list
+   * 
+   * @param entries Array of string literals or RegExp patterns to remove from the allow-list
+   */
+  removeFromAllowList(entries: Array<string | RegExp>): void {
+    this.#allowList = this.#allowList.filter(existing => {
+      return !entries.some(entry => {
+        if (typeof entry === 'string' && typeof existing === 'string') {
+          return entry === existing
+        }
+        if (entry instanceof RegExp && existing instanceof RegExp) {
+          return entry.toString() === existing.toString()
+        }
+        return false
+      })
+    })
+  }
+
+  /**
+   * Get the current allow-list
+   * 
+   * @returns Array<string | RegExp> The current allow-list
+   */
+  getAllowList(): Array<string | RegExp> {
+    return [...this.#allowList]
+  }
 }
