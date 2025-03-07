@@ -99,11 +99,12 @@ export default class URLSheriff {
       ipAddressList = await this.hostnameLookup(hostname)
     }
     
-    // Check if any of the resolved IP addresses are in the allow-list
-    const anyIPAddressInAllowList = ipAddressList.some(ipAddress => this.#isInAllowList(ipAddress))
-    if (anyIPAddressInAllowList) {
-      return true
-    }
+    // SECURITY FIX: Removed the IP-based allow-list check
+    // The following code was removed to prevent SSRF vulnerabilities:
+    // const anyIPAddressInAllowList = ipAddressList.some(ipAddress => this.#isInAllowList(ipAddress))
+    // if (anyIPAddressInAllowList) {
+    //   return true
+    // }
     
     const anyIPAddressIsPrivate: boolean = ipAddressList.some(ipAddress => {
       return this.isPrivateIPAddress(ipAddress)
