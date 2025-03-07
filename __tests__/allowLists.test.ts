@@ -15,6 +15,17 @@ describe('Allow-list Tests', () => {
     assert.strictEqual(isSafe, true, 'URL with hostname in allow-list should be considered safe')
   })
 
+  test('Should allow URLs with ip addresses in the allow-list', async () => {
+    // Arrange
+    const sheriff = new URLSheriff({
+      allowList: ['1.1.1.1']
+    })
+
+    // Act & Assert
+    const isSafe = await sheriff.isSafeURL('https://1.1.1.1/api')
+    assert.strictEqual(isSafe, true, 'URL with IP addresses in allow-list should be considered safe')
+  })
+
   test('Should allow URLs with hostnames matching regex patterns in the allow-list', async () => {
     // Arrange
     const sheriff = new URLSheriff({
@@ -79,5 +90,36 @@ describe('Allow-list Tests', () => {
     
     // Verify the isPrivateIPAddress method was not called since the hostname was in the allow-list
     assert.strictEqual(isPrivateIPAddressMock.mock.callCount(), 0, 'isPrivateIPAddress should not be called for hostnames in the allow-list')
+  })
+
+  test('Should not allow URLs with resolved IPs in allow-list if hostname is not allowed', async () => {
+    // Arrange
+    const sheriff = new URLSheriff({
+      allowList: ['127.0.0.1', 'localhost']
+    })
+    
+    // Mock the DNS resolution to simulate a malicious domain resolving to an allowed IP
+    const originalHostnameLookup = sheriff.hostnameLookup
+    sheriff.hostnameLookup = async () => {
+      return ['127.0.0.1', '8.8.8.8'] // Simulate evil.com resolving to 127.0.0.1
+    }
+    
+    try {
+      // Act
+      await sheriff.isSafeURL('https://evil.com')
+      
+      // If we get here, the test failed because the URL was incorrectly allowed
+      assert.fail('URL with resolved IP in allow-list should not be allowed if hostname is not in allow-list')
+    } catch (error) {
+      // Assert
+      assert.strictEqual(
+        (error as Error).message, 
+        'URL uses a private hostname', 
+        'Should throw the correct error message'
+      )
+    } finally {
+      // Restore the original method
+      sheriff.hostnameLookup = originalHostnameLookup
+    }
   })
 })
