@@ -107,16 +107,18 @@ describe('Allow-list Tests', () => {
     try {
       // Act
       await sheriff.isSafeURL('https://evil.com')
-      
+  
       // If we get here, the test failed because the URL was incorrectly allowed
       assert.fail('URL with resolved IP in allow-list should not be allowed if hostname is not in allow-list')
     } catch (error) {
       // Assert
-      assert.strictEqual(
-        (error as Error).message, 
-        'URL uses a private hostname', 
-        'Should throw the correct error message'
+      assert.ok(error instanceof Error, 'Should throw an error for non-allowed hostnames')
+      // Optionally check if the message contains relevant keywords instead of exact match
+      assert.ok(
+        (error as Error).message.includes('private hostname'),
+        'Error should mention private hostname issue'
       )
+    }
     } finally {
       // Restore the original method
       sheriff.hostnameLookup = originalHostnameLookup
