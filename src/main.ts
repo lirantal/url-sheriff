@@ -10,16 +10,23 @@ const debug = debuglog('url-sheriff')
 interface URLSheriffConfig {
   dnsResolvers?: string[]
   allowList?: Array<string | RegExp>
+  allowedSchemes?: string[] // New property for allowed URL schemes
 }
 
 export default class URLSheriff {
   #config: URLSheriffConfig
   #resolver?: Resolver
   #allowList: Array<string | RegExp>
+  #allowedSchemes: string[] | null // Store allowed schemes
 
   constructor(config: URLSheriffConfig = {}) {
     this.#config = config
     this.#allowList = config.allowList || []
+    if (typeof config.allowedSchemes !== 'undefined') {
+      this.#allowedSchemes = this.setAllowedSchemes(config.allowedSchemes)
+    } else {
+      this.#allowedSchemes = null
+    }
 
     debug('Initializing URLSheriff with config: %O', this.#config)
     
@@ -31,6 +38,10 @@ export default class URLSheriff {
     
     if (this.#allowList.length > 0) {
       debug('Initialized with allow-list entries: %d', this.#allowList.length)
+    }
+
+    if (this.#allowedSchemes) {
+      debug('Initialized with allowed schemes: %O', this.#allowedSchemes)
     }
   }
 
@@ -59,6 +70,21 @@ export default class URLSheriff {
    * @param value The hostname or IP address to check
    * @returns boolean True if the value matches an entry in the allow-list
    */
+  
+  /**
+   * Checks if the URL scheme is allowed based on configuration
+   * 
+   * @param scheme The URL scheme to check
+   * @returns boolean True if the scheme is allowed or if no scheme restrictions are set
+   */
+  #isSchemeAllowed(scheme: string): boolean {
+    // If no schemes are specified, all schemes are allowed
+    if (!this.#allowedSchemes || this.#allowedSchemes.length === 0) {
+      return true
+    }
+
+    return this.#allowedSchemes.includes(scheme.toLowerCase())
+  }
   #isInAllowList(value: string): boolean {
     return this.#allowList.some(entry => {
       if (typeof entry === 'string') {
@@ -76,9 +102,10 @@ export default class URLSheriff {
    * 
    * SSRF Validation process:
    * 1. Ensure the string provided is a valid URL structure
-   * 2. Check if the hostname is in the allow-list
-   * 3. If the URL relies on an IP address, check if it is a private IP address
-   * 4. If the URL relies on a hostname, resolve it, and check if it is a private IP address
+   * 2. Check if the URL scheme is allowed (if scheme restrictions are configured)
+   * 3. Check if the hostname is in the allow-list
+   * 4. If the URL relies on an IP address, check if it is a private IP address
+   * 5. If the URL relies on a hostname, resolve it, and check if it is a private IP address
    * 
    * @param url 
    * @returns boolean
@@ -88,7 +115,15 @@ export default class URLSheriff {
     
     const parsedUrl = this.#getParsedURL(url)
     const hostname = parsedUrl.hostname
-    debug('Extracted hostname: %s', hostname)
+    const scheme = parsedUrl.protocol.replace(':', '')
+    
+    debug('Extracted hostname: %s, scheme: %s', hostname, scheme)
+
+    // Check if the URL scheme is allowed
+    if (!this.#isSchemeAllowed(scheme)) {
+      debug('URL scheme is not allowed: %s', scheme)
+      throw new Error(`URL scheme '${scheme}' is not allowed`)
+    }
 
     // Check if the hostname is in the allow-list
     if (this.#isInAllowList(hostname)) {
@@ -240,5 +275,34 @@ export default class URLSheriff {
    */
   getAllowList(): Array<string | RegExp> {
     return [...this.#allowList]
+  }
+
+  /**
+   * Set allowed URL schemes
+   * 
+   * @param schemes Array of allowed URL schemes (e.g., ['http', 'https'])
+   */
+  setAllowedSchemes(schemes: string[]): string[] {
+    debug('Setting allowed schemes: %O', schemes)
+    this.#allowedSchemes = schemes.map(scheme => scheme.toLowerCase())
+
+    return this.#allowedSchemes;
+  }
+
+  /**
+   * Get the current allowed URL schemes
+   * 
+   * @returns string[] | null The current allowed schemes or null if all schemes are allowed
+   */
+  getAllowedSchemes(): string[] | null {
+    return this.#allowedSchemes ? [...this.#allowedSchemes] : null
+  }
+
+  /**
+   * Clear scheme restrictions
+   */
+  clearSchemeRestrictions(): void {
+    debug('Clearing scheme restrictions')
+    this.#allowedSchemes = null
   }
 }
