@@ -283,8 +283,13 @@ export default class URLSheriff {
    * @param schemes Array of allowed URL schemes (e.g., ['http', 'https'])
    * @returns string[] The updated allowed schemes
    */
-  setAllowedSchemes(schemes: string[]): string[] {
+  setAllowedSchemes(schemes: string[]): string[] | null {
     debug('Setting allowed schemes: %O', schemes)
+    if (schemes.length === 0) {
+      this.#allowedSchemes = null;
+      return null;
+    }
+
     this.#allowedSchemes = schemes.map(scheme => scheme.toLowerCase())
 
     return this.#allowedSchemes;
