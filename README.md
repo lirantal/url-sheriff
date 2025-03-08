@@ -123,6 +123,41 @@ This can be helpful for:
 - Verifying that DNS resolution is working correctly
 - Monitoring allow-list functionality
 
+### Allowed Schemes
+
+Initialize with allowed schemes
+
+```js
+const sheriff = new URLSheriff({
+  allowedSchemes: ['https', 'http']
+});
+```
+
+Or set allowed schemes after initialization
+
+```js
+sheriff.setAllowedSchemes(['https']);
+```
+
+Check if a URL is safe
+
+```js
+await sheriff.isSafeURL('https://example.com'); // This will pass
+await sheriff.isSafeURL('ftp://example.com');   // This will throw an error
+```
+
+Get current allowed schemes
+
+```js
+const schemes = sheriff.getAllowedSchemes(); // Returns ['https']
+```
+
+Remove all scheme restrictions
+
+```js
+sheriff.clearSchemeRestrictions();
+```
+
 ## Contributing
 
 Please consult [CONTRIBUTING](./.github/CONTRIBUTING.md) for guidelines on contributing to this project.
