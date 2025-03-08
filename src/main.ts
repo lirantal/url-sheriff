@@ -281,6 +281,7 @@ export default class URLSheriff {
    * Set allowed URL schemes
    * 
    * @param schemes Array of allowed URL schemes (e.g., ['http', 'https'])
+   * @returns string[] The updated allowed schemes
    */
   setAllowedSchemes(schemes: string[]): string[] {
     debug('Setting allowed schemes: %O', schemes)
