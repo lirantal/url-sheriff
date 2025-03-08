@@ -1,6 +1,6 @@
 {
   "name": "url-sheriff",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "validate and prevent against SSRF",
   "types": "dist/main.d.ts",
   "type": "module",
