@@ -2,6 +2,10 @@ import { URL } from 'url'
 import { Resolver, lookup } from 'node:dns/promises'
 import ipaddress from 'ipaddr.js'
 import { LookupAddress } from 'node:dns'
+import { debuglog } from 'node:util'
+
+// Initialize debug logger for 'url-sheriff' namespace
+const debug = debuglog('url-sheriff')
 
 interface URLSheriffConfig {
   dnsResolvers?: string[]
@@ -17,9 +21,16 @@ export default class URLSheriff {
     this.#config = config
     this.#allowList = config.allowList || []
 
+    debug('Initializing URLSheriff with config: %O', this.#config)
+    
     if (this.#config.dnsResolvers) {
+      debug('Using custom DNS resolvers: %O', this.#config.dnsResolvers)
       this.#resolver = new Resolver()
       this.#resolver.setServers(this.#config.dnsResolvers)
+    }
+    
+    if (this.#allowList.length > 0) {
+      debug('Initialized with allow-list entries: %d', this.#allowList.length)
     }
   }
 
@@ -28,14 +39,17 @@ export default class URLSheriff {
       try {
         return new URL(url)
       } catch (error) {
+        debug('Failed to parse URL string: %s', url)
         throw new Error('Invalid URL provided')
       }
     }
 
     if (url instanceof URL) {
+      debug('Using provided URL object: %s', url.href)
       return url
     }
 
+    debug('Invalid URL type provided: %O', url)
     throw new Error('Invalid URL provided')
   }
 
@@ -70,20 +84,27 @@ export default class URLSheriff {
    * @returns boolean
    */
   async isSafeURL(url: string | URL): Promise<boolean> {
+    debug('Checking if URL is safe: %s', typeof url === 'string' ? url : url.href)
+    
     const parsedUrl = this.#getParsedURL(url)
     const hostname = parsedUrl.hostname
+    debug('Extracted hostname: %s', hostname)
 
     // Check if the hostname is in the allow-list
     if (this.#isInAllowList(hostname)) {
+      debug('Hostname is in allow-list, URL is safe: %s', hostname)
       return true
     }
 
     // as a short-circuit for performance we assume the hostname is an IP address
     // and validate if it is a valid one, then check if it is a private IP address
-    if (ipaddress.isValid(hostname)) {
+    if (ipaddress.isValid(hostname)) {      
       if (this.isPrivateIPAddress(hostname)) {
+        debug('IP address is private, URL is unsafe: %s', hostname)
         throw new Error('URL uses a private hostname')
       }
+      
+      debug('IP address is public, URL is safe: %s', hostname)
       return true
     }
 
@@ -91,13 +112,18 @@ export default class URLSheriff {
     // perform a DNS lookup to resolve the hostname to an IP address in the most
     // performance efficient way possible and then check if the resolved IP address
     // is a private IP address
+    debug('Hostname is not an IP address, resolving via DNS: %s', hostname)
 
     let ipAddressList: string[] = []
     if (this.#resolver) {
+      debug('Using custom DNS resolver')
       ipAddressList = await this.resolveHostnameViaServers(hostname)
     } else {
+      debug('Using system DNS resolver')
       ipAddressList = await this.hostnameLookup(hostname)
     }
+    
+    debug('Resolved hostname %s to IP addresses: %O', hostname, ipAddressList)
     
     // SECURITY FIX: Removed the IP-based allow-list check
     // The following code was removed to prevent SSRF vulnerabilities:
@@ -107,27 +133,36 @@ export default class URLSheriff {
     // }
     
     const anyIPAddressIsPrivate: boolean = ipAddressList.some(ipAddress => {
-      return this.isPrivateIPAddress(ipAddress)
+      const isPrivate = this.isPrivateIPAddress(ipAddress)
+      if (isPrivate) {
+        debug('Found private IP address in resolution: %s', ipAddress)
+      }
+      return isPrivate
     })
 
     if (anyIPAddressIsPrivate) {
+      debug('URL resolves to private IP address, URL is unsafe: %s', hostname)
       throw new Error('URL uses a private hostname')
     }
 
+    debug('All IP addresses are public, URL is safe: %s', hostname)
     return true;
   }
 
-  isPrivateIPAddress(ipAddress: string): boolean {
+  isPrivateIPAddress(ipAddress: string): boolean {    
     let ip = ipaddress.parse(ipAddress)
 
     if (ip instanceof ipaddress.IPv6 && ip.isIPv4MappedAddress()) {
       ip = ip.toIPv4Address()
     }
 
-    if (ip.range() !== 'unicast') {
+    const range = ip.range()    
+    if (range !== 'unicast') {
+      debug('IP address is private (non-unicast range): %s', ipAddress)
       return true
     }
 
+    debug('IP address is public: %s', ipAddress)
     return false
   }
 
@@ -136,12 +171,18 @@ export default class URLSheriff {
    * @param hostname the hostname to perform a DNS lookup for
    * @returns string[] the list of resolved IP addresses
    */
-  async hostnameLookup(hostname: string): Promise<string[]> {
-    const ipAddressListDetails: LookupAddress[] = await lookup(hostname, { all: true })
-    const ipAddressList = ipAddressListDetails.map(ipAddressDetails => {
-      return ipAddressDetails.address
-    })
-    return ipAddressList
+  async hostnameLookup(hostname: string): Promise<string[]> {    
+    try {
+      const ipAddressListDetails: LookupAddress[] = await lookup(hostname, { all: true })
+      const ipAddressList = ipAddressListDetails.map(ipAddressDetails => {
+        return ipAddressDetails.address
+      })
+      
+      return ipAddressList
+    } catch (error) {
+      debug('Error looking up hostname %s: %O', hostname, error)
+      throw error
+    }
   }
 
   /**
@@ -149,13 +190,18 @@ export default class URLSheriff {
    * @param hostname the hostname to perform a DNS lookup for
    * @returns string[] the list of resolved IP addresses
    */
-  async resolveHostnameViaServers(hostname: string): Promise<string[]> {
+  async resolveHostnameViaServers(hostname: string): Promise<string[]> {    
     if (!this.#resolver) {
       throw new Error('DNS resolver is not defined');
     }
     
-    const ipAddressList: string[] = await this.#resolver.resolve4(hostname)
-    return ipAddressList
+    try {
+      const ipAddressList: string[] = await this.#resolver.resolve4(hostname)
+      return ipAddressList
+    } catch (error) {
+      debug('Error resolving hostname %s with custom resolvers: %O', hostname, error)
+      throw error
+    }
   }
 
   /**
@@ -164,6 +210,7 @@ export default class URLSheriff {
    * @param entries Array of string literals or RegExp patterns to add to the allow-list
    */
   addToAllowList(entries: Array<string | RegExp>): void {
+    debug('Adding %d entries to allow-list', entries.length)
     this.#allowList = [...this.#allowList, ...entries]
   }
 
