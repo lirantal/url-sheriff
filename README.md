@@ -97,6 +97,32 @@ const currentAllowList = sheriff.getAllowList()
    - Resolve the hostname to IP addresses and check if any are private
 4. Additionally, if any of the resolved IP addresses match entries in the allow-list, the URL is considered safe.
 
+### Debug Logging
+
+URLSheriff uses Node.js's built-in `util.debuglog` for debug logging. To enable debug logs, set the `NODE_DEBUG` environment variable to include `url-sheriff`:
+
+```sh
+# Enable debug logs for URLSheriff
+NODE_DEBUG=url-sheriff node your-app.js
+
+# Enable multiple debug namespaces
+NODE_DEBUG=url-sheriff,http,net node your-app.js
+```
+
+When debug logging is enabled, URLSheriff will output detailed information about:
+
+- Initialization and configuration
+- URL parsing and validation steps
+- DNS resolution processes
+- Allow-list checks
+- IP address validation results
+
+This can be helpful for:
+- Troubleshooting URL validation issues
+- Understanding why certain URLs are being blocked
+- Verifying that DNS resolution is working correctly
+- Monitoring allow-list functionality
+
 ## Contributing
 
 Please consult [CONTRIBUTING](./.github/CONTRIBUTING.md) for guidelines on contributing to this project.
