@@ -158,6 +158,10 @@ Remove all scheme restrictions
 sheriff.clearSchemeRestrictions();
 ```
 
+## References and Prior work
+
+- Python's [safehttpx](https://github.com/gradio-app/safehttpx) library to prevent SSRF
+
 ## Contributing
 
 Please consult [CONTRIBUTING](./.github/CONTRIBUTING.md) for guidelines on contributing to this project.
