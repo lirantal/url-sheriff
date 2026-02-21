@@ -9,9 +9,9 @@
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.org/package/url-sheriff"><img src="https://badgen.net/npm/v/url-sheriff" alt="npm version"/></a>
-  <a href="https://www.npmjs.org/package/url-sheriff"><img src="https://badgen.net/npm/license/url-sheriff" alt="license"/></a>
-  <a href="https://www.npmjs.org/package/url-sheriff"><img src="https://badgen.net/npm/dt/url-sheriff" alt="downloads"/></a>
+  <a href="https://www.npmjs.com/package/url-sheriff"><img src="https://badgen.net/npm/v/url-sheriff" alt="npm version"/></a>
+  <a href="https://www.npmjs.com/package/url-sheriff"><img src="https://badgen.net/npm/license/url-sheriff" alt="license"/></a>
+  <a href="https://www.npmjs.com/package/url-sheriff"><img src="https://badgen.net/npm/dt/url-sheriff" alt="downloads"/></a>
   <a href="https://github.com/lirantal/url-sheriff/actions?workflow=CI"><img src="https://github.com/lirantal/url-sheriff/workflows/CI/badge.svg" alt="build"/></a>
   <a href="https://codecov.io/gh/lirantal/url-sheriff"><img src="https://badgen.net/codecov/c/github/lirantal/url-sheriff" alt="codecov"/></a>
   <a href="https://snyk.io/test/github/lirantal/url-sheriff"><img src="https://snyk.io/test/github/lirantal/url-sheriff/badge.svg" alt="Known Vulnerabilities"/></a>
