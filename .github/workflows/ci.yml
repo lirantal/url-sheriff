@@ -2,8 +2,12 @@ name: CI
 
 on: [push, pull_request]
 
+permissions: {}
+
 jobs:
   test:
+    permissions:
+      contents: read
     strategy:
       matrix:
         node: ["18.x", "20.x", "22.0.0"]
