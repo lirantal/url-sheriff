@@ -4,12 +4,14 @@ updates:
     directory: ".github/workflows"
     schedule:
       interval: "monthly"
-    cooldown:
-      default-days: 30
     commit-message:
       # Prefix all commit messages with "chore: "
       prefix: "chore"
     open-pull-requests-limit: 10
+    cooldown:
+      default-days: 30
+    # Use the 'dependencies' default label and add
+    # the 'automerge' one for automerge github action support
     labels:
       - "dependencies"
       - "automerge"
@@ -22,6 +24,16 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    cooldown:
+      default-days: 30
+      semver-major-days: 30
+      semver-minor-days: 30
+      semver-patch-days: 30
+    # Use the 'dependencies' default label and add
+    # the 'automerge' one for automerge github action support
+    labels:
+      - "dependencies"
+      - "automerge"
     groups:
       # Production dependencies without breaking changes
       dependencies:
@@ -41,6 +53,4 @@ updates:
     # ignore:
     #   - dependency-name: tap
     #     update-types: ["version-update:semver-major"]
-    labels:
-      - "dependencies"
-      - "automerge"
+
