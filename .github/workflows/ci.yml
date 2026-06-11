@@ -10,7 +10,7 @@ jobs:
       contents: read
     strategy:
       matrix:
-        node: ["18.x", "20.x", "22.0.0"]
+        node: ["24.x"]
         platform: [ubuntu-latest]
     name: Node v${{matrix.node}} ((${{matrix.platform}}))
     runs-on: ${{matrix.platform}}
