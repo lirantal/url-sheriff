@@ -56,6 +56,25 @@ describe('SSRF isSafeURL Sanity suite #1', () => {
     assert.strictEqual(isSafe, true);
   })
 
+  test('If a URL uses a private IPv6 literal, an exception is thrown without DNS lookup', async (t) => {
+    const sheriff = new URLSheriff({})
+    const hostnameLookupMock = t.mock.method(sheriff, 'hostnameLookup', async () => {
+      assert.fail('IPv6 literals should be validated as IP addresses without DNS lookup')
+    })
+
+    for (const url of ['http://[::1]/', 'http://[::ffff:127.0.0.1]/', 'http://[fc00::1]/']) {
+      await assert.rejects(
+        sheriff.isSafeURL(url),
+        {
+          name: 'Error',
+          message: 'URL uses a private hostname'
+        }
+      )
+    }
+
+    assert.strictEqual(hostnameLookupMock.mock.callCount(), 0, 'hostnameLookup should not be called for IPv6 literals')
+  })
+
   test.skip('If a URL uses an IPv4 Mapped address via IPv6 that turns out to be reserved, throw the exception', async (t) => {
     // this doesn't yet pass because it the ipv6 address doesn't get passed through new URL() anyway
 
