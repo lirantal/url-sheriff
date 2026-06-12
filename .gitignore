@@ -112,6 +112,3 @@ typings/
 dist/
 
 .qodo/
-
-# Local devcontainer SSH material
-.devcontainer/.ssh/
