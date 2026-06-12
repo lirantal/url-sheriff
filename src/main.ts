@@ -7,6 +7,22 @@ import { debuglog } from 'node:util'
 // Initialize debug logger for 'url-sheriff' namespace
 const debug = debuglog('url-sheriff')
 
+function normalizeHostname(hostname: string): string {
+  if (hostname.startsWith('[') && hostname.endsWith(']')) {
+    return hostname.slice(1, -1)
+  }
+
+  return hostname
+}
+
+function isDnsNoRecordError(error: unknown): boolean {
+  if (!error || typeof error !== 'object' || !('code' in error)) {
+    return false
+  }
+
+  return error.code === 'ENODATA' || error.code === 'ENOTFOUND'
+}
+
 interface URLSheriffConfig {
   dnsResolvers?: string[]
   allowList?: Array<string | RegExp>
@@ -114,7 +130,7 @@ export default class URLSheriff {
     debug('Checking if URL is safe: %s', typeof url === 'string' ? url : url.href)
     
     const parsedUrl = this.#getParsedURL(url)
-    const hostname = parsedUrl.hostname
+    const hostname = normalizeHostname(parsedUrl.hostname)
     const scheme = parsedUrl.protocol.replace(':', '')
     
     debug('Extracted hostname: %s, scheme: %s', hostname, scheme)
@@ -231,7 +247,33 @@ export default class URLSheriff {
     }
     
     try {
-      const ipAddressList: string[] = await this.#resolver.resolve4(hostname)
+      const [ipv4Result, ipv6Result] = await Promise.allSettled([
+        this.#resolver.resolve4(hostname),
+        this.#resolver.resolve6(hostname)
+      ])
+
+      const unexpectedError = [ipv4Result, ipv6Result].find(result => {
+        return result.status === 'rejected' && !isDnsNoRecordError(result.reason)
+      })
+      if (unexpectedError?.status === 'rejected') {
+        throw unexpectedError.reason
+      }
+
+      const ipAddressList: string[] = [ipv4Result, ipv6Result].flatMap(result => {
+        return result.status === 'fulfilled' ? result.value : []
+      })
+      if (ipAddressList.length === 0) {
+        const dnsError = [ipv4Result, ipv6Result].find(result => {
+          return result.status === 'rejected'
+        })
+
+        if (dnsError?.status === 'rejected') {
+          throw dnsError.reason
+        }
+
+        throw new Error(`Could not resolve hostname: ${hostname}`)
+      }
+
       return ipAddressList
     } catch (error) {
       debug('Error resolving hostname %s with custom resolvers: %O', hostname, error)
