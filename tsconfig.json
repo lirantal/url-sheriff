@@ -13,11 +13,7 @@
     "moduleResolution": "NodeNext",
     "module": "NodeNext",
     "target": "ES2022",
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ]
-    },
+    "ignoreDeprecations": "6.0",
     "noEmit": true,
     "rootDir": "./src",
     "declaration": true,
