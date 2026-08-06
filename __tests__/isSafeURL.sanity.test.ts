@@ -75,6 +75,36 @@ describe('SSRF isSafeURL Sanity suite #1', () => {
     assert.strictEqual(hostnameLookupMock.mock.callCount(), 0, 'hostnameLookup should not be called for IPv6 literals')
   })
 
+  test('If an explicitly allowed scheme has no hostname, an exception is thrown before lookup', async (t) => {
+    const sheriff = new URLSheriff({ allowedSchemes: ['file'] })
+    const hostnameLookupMock = t.mock.method(sheriff, 'hostnameLookup', async () => {
+      assert.fail('Hostless URLs must be rejected before DNS lookup')
+    })
+
+    await assert.rejects(
+      sheriff.isSafeURL('file:///etc/passwd'),
+      {
+        name: 'Error',
+        message: 'URL must include a hostname'
+      }
+    )
+
+    assert.strictEqual(hostnameLookupMock.mock.callCount(), 0)
+  })
+
+  test('If hostname resolution returns no addresses, an exception is thrown', async (t) => {
+    const sheriff = new URLSheriff()
+    t.mock.method(sheriff, 'hostnameLookup', async () => [])
+
+    await assert.rejects(
+      sheriff.isSafeURL('https://example.com'),
+      {
+        name: 'Error',
+        message: 'Could not resolve hostname: example.com'
+      }
+    )
+  })
+
   test.skip('If a URL uses an IPv4 Mapped address via IPv6 that turns out to be reserved, throw the exception', async (t) => {
     // this doesn't yet pass because it the ipv6 address doesn't get passed through new URL() anyway
 

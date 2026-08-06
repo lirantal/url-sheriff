@@ -133,6 +133,11 @@ export default class URLSheriff {
       throw new Error(`URL scheme '${scheme}' is not allowed`)
     }
 
+    if (hostname.length === 0) {
+      debug('URL does not include a hostname')
+      throw new Error('URL must include a hostname')
+    }
+
     // Check if the hostname is in the allow-list
     if (this.#isInAllowList(hostname)) {
       debug('Hostname is in allow-list, URL is safe: %s', hostname)
@@ -164,6 +169,11 @@ export default class URLSheriff {
     } else {
       debug('Using system DNS resolver')
       ipAddressList = await this.hostnameLookup(hostname)
+    }
+
+    if (ipAddressList.length === 0) {
+      debug('Hostname did not resolve to any IP addresses: %s', hostname)
+      throw new Error(`Could not resolve hostname: ${hostname}`)
     }
     
     debug('Resolved hostname %s to IP addresses: %O', hostname, ipAddressList)
