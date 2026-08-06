@@ -1,5 +1,11 @@
 # url-sheriff
 
+## 2.0.0
+
+### Major Changes
+
+- 73c0a1c: Default URL validation to HTTP and HTTPS, reject hostless URLs and empty DNS results, and make empty or cleared scheme configuration restore the secure defaults.
+
 ## 1.0.1
 
 ### Patch Changes
