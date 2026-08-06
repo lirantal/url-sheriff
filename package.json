@@ -34,6 +34,8 @@
     "build": "tsc && tsup",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "lint:markdown": "npx --no-install markdownlint-cli -c .github/.markdownlint.yml -i 'apm_modules/**' -i '.git' -i '__tests__' -i '.github' -i '.changeset' -i 'CODE_OF_CONDUCT.md' -i 'CHANGELOG.md' -i 'docs/**' -i '.superpowers/**' -i 'node_modules' -i 'dist' '**/**.md'",
+    "lint:markdown:fix": "npx --no-install markdownlint-cli -c .github/.markdownlint.yml -i 'apm_modules/**' -i '.git' -i '__tests__' -i '.github' -i '.changeset' -i 'CODE_OF_CONDUCT.md' -i 'CHANGELOG.md' -i 'docs/**' -i '.superpowers/**' -i 'node_modules' -i 'dist' '**/**.md' --fix",
     "test": "c8 node --loader ts-node/esm --test __tests__/**",
     "test:watch": "c8 node --loader ts-node/esm --test --watch __tests__/**",
     "bench": "node --allow-natives-syntax __bench__/bench.test.mjs",
