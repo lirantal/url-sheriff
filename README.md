@@ -29,12 +29,19 @@ npm install --save url-sheriff
 ```js
 import URLSheriff from 'url-sheriff'
 
-// initialize
 const sheriff = new URLSheriff()
 
-// this will throw an Error exception
-sheriff.isSafeURL('http://127.0.0.1:3000')
+await sheriff.isSafeURL('https://example.com') // true
+
+// Throws `URL uses a private hostname`
+await sheriff.isSafeURL('http://127.0.0.1:3000')
 ```
+
+### Secure Defaults
+
+URL Sheriff allows only `http` and `https` URLs by default. A URL being accepted by `new URL()` means it is syntactically valid; it does not mean the URL is safe for a server to access. Hostless URLs and hostnames that resolve to no IP addresses are rejected because URL Sheriff cannot establish a safe network destination.
+
+Scheme checks are applied before hostname, allow-list, and IP-address validation. Configure every additional scheme explicitly and ensure the downstream client is safe for that scheme.
 
 ### Using Custom DNS Resolvers
 
@@ -94,7 +101,8 @@ const currentAllowList = sheriff.getAllowList()
 3. If the hostname doesn't match any entry in the allow-list, the normal safety checks proceed:
    - Check if the hostname is a valid IP address and if it's private
    - Resolve the hostname to IP addresses and check if any are private
-4. Additionally, if any of the resolved IP addresses match entries in the allow-list, the URL is considered safe.
+
+Resolved IP addresses are always checked for private ranges. They are not matched against the allow-list.
 
 ### Debug Logging
 
@@ -124,38 +132,46 @@ This can be helpful for:
 
 ### Allowed Schemes
 
-Initialize with allowed schemes
+The effective default is always `['http', 'https']`:
+
+```js
+const sheriff = new URLSheriff()
+
+sheriff.getAllowedSchemes() // ['http', 'https']
+```
+
+Opt in to additional schemes explicitly:
 
 ```js
 const sheriff = new URLSheriff({
-  allowedSchemes: ['https', 'http']
-});
+  allowedSchemes: ['http', 'https', 'ftp']
+})
+
+await sheriff.isSafeURL('ftp://example.com') // true when the host resolves publicly
 ```
 
-Or set allowed schemes after initialization
+Schemes are matched case-insensitively. Passing an empty list or calling `clearSchemeRestrictions()` restores the secure HTTP/HTTPS defaults:
 
 ```js
-sheriff.setAllowedSchemes(['https']);
+sheriff.setAllowedSchemes([])
+sheriff.getAllowedSchemes() // ['http', 'https']
+
+sheriff.setAllowedSchemes(['ftp'])
+sheriff.clearSchemeRestrictions()
+sheriff.getAllowedSchemes() // ['http', 'https']
 ```
 
-Check if a URL is safe
+Explicitly enabling a scheme does not bypass hostname validation. Hostless URLs such as `file:///etc/passwd` are rejected because there is no network destination to validate. DNS resolution must also return at least one address before a URL can be considered safe.
 
-```js
-await sheriff.isSafeURL('https://example.com'); // This will pass
-await sheriff.isSafeURL('ftp://example.com');   // This will throw an error
-```
+#### Migrating from 1.x
 
-Get current allowed schemes
+Version 2.0.0 changes scheme handling to fail closed:
 
-```js
-const schemes = sheriff.getAllowedSchemes(); // Returns ['https']
-```
-
-Remove all scheme restrictions
-
-```js
-sheriff.clearSchemeRestrictions();
-```
+- Unconfigured instances allow HTTP and HTTPS instead of every scheme.
+- Consumers that require FTP or another scheme must add it to `allowedSchemes` explicitly.
+- `allowedSchemes: []` and `clearSchemeRestrictions()` restore HTTP/HTTPS defaults instead of allowing every scheme.
+- `getAllowedSchemes()` returns the effective list instead of `null`.
+- Hostless URLs and hostnames resolving to no addresses now throw errors instead of returning `true`.
 
 ## References and Prior work
 
