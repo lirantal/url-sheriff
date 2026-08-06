@@ -6,6 +6,7 @@ import { debuglog } from 'node:util'
 
 // Initialize debug logger for 'url-sheriff' namespace
 const debug = debuglog('url-sheriff')
+const DEFAULT_ALLOWED_SCHEMES = ['http', 'https'] as const
 
 function normalizeHostname(hostname: string): string {
   if (hostname.startsWith('[') && hostname.endsWith(']')) {
@@ -33,16 +34,14 @@ export default class URLSheriff {
   #config: URLSheriffConfig
   #resolver?: Resolver
   #allowList: Array<string | RegExp>
-  #allowedSchemes: string[] | null // Store allowed schemes
+  #allowedSchemes: string[]
 
   constructor(config: URLSheriffConfig = {}) {
     this.#config = config
     this.#allowList = config.allowList || []
-    if (typeof config.allowedSchemes !== 'undefined') {
-      this.#allowedSchemes = this.setAllowedSchemes(config.allowedSchemes)
-    } else {
-      this.#allowedSchemes = null
-    }
+    this.#allowedSchemes = typeof config.allowedSchemes === 'undefined'
+      ? [...DEFAULT_ALLOWED_SCHEMES]
+      : this.setAllowedSchemes(config.allowedSchemes)
 
     debug('Initializing URLSheriff with config: %O', this.#config)
     
@@ -56,9 +55,7 @@ export default class URLSheriff {
       debug('Initialized with allow-list entries: %d', this.#allowList.length)
     }
 
-    if (this.#allowedSchemes) {
-      debug('Initialized with allowed schemes: %O', this.#allowedSchemes)
-    }
+    debug('Initialized with allowed schemes: %O', this.#allowedSchemes)
   }
 
   #getParsedURL(url: string | URL): URL {
@@ -91,14 +88,9 @@ export default class URLSheriff {
    * Checks if the URL scheme is allowed based on configuration
    * 
    * @param scheme The URL scheme to check
-   * @returns boolean True if the scheme is allowed or if no scheme restrictions are set
+   * @returns boolean True if the scheme is allowed
    */
   #isSchemeAllowed(scheme: string): boolean {
-    // If no schemes are specified, all schemes are allowed
-    if (!this.#allowedSchemes || this.#allowedSchemes.length === 0) {
-      return true
-    }
-
     return this.#allowedSchemes.includes(scheme.toLowerCase())
   }
   #isInAllowList(value: string): boolean {
@@ -325,32 +317,29 @@ export default class URLSheriff {
    * @param schemes Array of allowed URL schemes (e.g., ['http', 'https'])
    * @returns string[] The updated allowed schemes
    */
-  setAllowedSchemes(schemes: string[]): string[] | null {
+  setAllowedSchemes(schemes: string[]): string[] {
     debug('Setting allowed schemes: %O', schemes)
-    if (schemes.length === 0) {
-      this.#allowedSchemes = null;
-      return null;
-    }
+    this.#allowedSchemes = schemes.length === 0
+      ? [...DEFAULT_ALLOWED_SCHEMES]
+      : schemes.map(scheme => scheme.toLowerCase())
 
-    this.#allowedSchemes = schemes.map(scheme => scheme.toLowerCase())
-
-    return this.#allowedSchemes;
+    return [...this.#allowedSchemes]
   }
 
   /**
    * Get the current allowed URL schemes
    * 
-   * @returns string[] | null The current allowed schemes or null if all schemes are allowed
+   * @returns string[] The effective allowed schemes
    */
-  getAllowedSchemes(): string[] | null {
-    return this.#allowedSchemes ? [...this.#allowedSchemes] : null
+  getAllowedSchemes(): string[] {
+    return [...this.#allowedSchemes]
   }
 
   /**
-   * Clear scheme restrictions
+   * Restore the secure default scheme restrictions
    */
   clearSchemeRestrictions(): void {
-    debug('Clearing scheme restrictions')
-    this.#allowedSchemes = null
+    debug('Restoring default scheme restrictions')
+    this.#allowedSchemes = [...DEFAULT_ALLOWED_SCHEMES]
   }
 }

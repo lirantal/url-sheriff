@@ -17,7 +17,7 @@ describe('URL Scheme Restrictions Tests', () => {
     assert.strictEqual(isSafeHttps, true, 'Upper-case HTTPS should match lower-case HTTPS in the allowed schemes list')
   })
 
-  test('Should allow all URL schemes by default', async () => {
+  test('Should allow only HTTP and HTTPS schemes by default', async () => {
     // Arrange
     const sheriff = new URLSheriff()
     
@@ -28,8 +28,24 @@ describe('URL Scheme Restrictions Tests', () => {
     const isSafeHttps = await sheriff.isSafeURL('https://example.com')
     assert.strictEqual(isSafeHttps, true, 'HTTPS scheme should be allowed by default')
     
+    await assert.rejects(
+      sheriff.isSafeURL('ftp://example.com'),
+      {
+        name: 'Error',
+        message: "URL scheme 'ftp' is not allowed"
+      },
+      'FTP scheme should be rejected by default'
+    )
+  })
+
+  test('Should allow explicitly configured additional schemes', async () => {
+    const sheriff = new URLSheriff({
+      allowedSchemes: ['HTTPS', 'ftp']
+    })
+
+    assert.deepStrictEqual(sheriff.getAllowedSchemes(), ['https', 'ftp'])
     const isSafeFtp = await sheriff.isSafeURL('ftp://example.com')
-    assert.strictEqual(isSafeFtp, true, 'FTP scheme should be allowed by default')
+    assert.strictEqual(isSafeFtp, true, 'Explicitly configured FTP should be allowed')
   })
 
   test('Should allow URLs with schemes in the allowed schemes list', async () => {
@@ -76,9 +92,9 @@ describe('URL Scheme Restrictions Tests', () => {
     // Arrange
     const sheriff = new URLSheriff()
     
-    // Initially all schemes should be allowed
-    const initialIsSafe = await sheriff.isSafeURL('ftp://example.com')
-    assert.strictEqual(initialIsSafe, true, 'All schemes should be allowed initially')
+    // Secure defaults should be active initially
+    const initialIsSafe = await sheriff.isSafeURL('http://example.com')
+    assert.strictEqual(initialIsSafe, true, 'HTTP should be allowed initially')
     
     // Act - restrict to HTTPS only
     sheriff.setAllowedSchemes(['https'])
@@ -110,7 +126,7 @@ describe('URL Scheme Restrictions Tests', () => {
     assert.deepStrictEqual(allowedSchemes, ['http', 'https'], 'Should return the configured allowed schemes')
   })
 
-  test('Should return null for allowed schemes when all schemes are allowed', () => {
+  test('Should return secure defaults when no allowed schemes are configured', () => {
     // Arrange
     const sheriff = new URLSheriff()
     
@@ -118,7 +134,16 @@ describe('URL Scheme Restrictions Tests', () => {
     const allowedSchemes = sheriff.getAllowedSchemes()
     
     // Assert
-    assert.strictEqual(allowedSchemes, null, 'Should return null when all schemes are allowed')
+    assert.deepStrictEqual(allowedSchemes, ['http', 'https'], 'Should return the secure default schemes')
+  })
+
+  test('Should return a defensive copy of allowed schemes', () => {
+    const sheriff = new URLSheriff()
+    const allowedSchemes = sheriff.getAllowedSchemes()
+
+    allowedSchemes.push('ftp')
+
+    assert.deepStrictEqual(sheriff.getAllowedSchemes(), ['http', 'https'])
   })
 
   test('Should clear scheme restrictions', async () => {
@@ -144,8 +169,16 @@ describe('URL Scheme Restrictions Tests', () => {
     const isSafeHttp = await sheriff.isSafeURL('http://example.com')
     assert.strictEqual(isSafeHttp, true, 'HTTP scheme should be allowed after clearing restrictions')
     
-    const isSafeFtp = await sheriff.isSafeURL('ftp://example.com')
-    assert.strictEqual(isSafeFtp, true, 'FTP scheme should be allowed after clearing restrictions')
+    await assert.rejects(
+      sheriff.isSafeURL('ftp://example.com'),
+      {
+        name: 'Error',
+        message: "URL scheme 'ftp' is not allowed"
+      },
+      'FTP scheme should be rejected after restoring secure defaults'
+    )
+
+    assert.deepStrictEqual(sheriff.getAllowedSchemes(), ['http', 'https'])
   })
 
   test('Should always check for private IP addresses even with allowed schemes', async (t) => {
@@ -222,7 +255,7 @@ describe('URL Scheme Restrictions Tests', () => {
     assert.strictEqual(isPrivateIPAddressMock.mock.callCount(), 0, 'isPrivateIPAddress should not be called for hosts in allow list')
   })
 
-  test('Should handle empty allowed schemes array as allowing all schemes', async () => {
+  test('Should handle empty allowed schemes array by restoring secure defaults', async () => {
     // Arrange
     const sheriff = new URLSheriff({
       allowedSchemes: []
@@ -234,5 +267,16 @@ describe('URL Scheme Restrictions Tests', () => {
     
     const isSafeHttps = await sheriff.isSafeURL('https://example.com')
     assert.strictEqual(isSafeHttps, true, 'HTTPS scheme should be allowed with empty allowed schemes array')
+
+    await assert.rejects(
+      sheriff.isSafeURL('ftp://example.com'),
+      {
+        name: 'Error',
+        message: "URL scheme 'ftp' is not allowed"
+      },
+      'FTP scheme should be rejected with an empty allowed schemes array'
+    )
+
+    assert.deepStrictEqual(sheriff.getAllowedSchemes(), ['http', 'https'])
   })
 })
