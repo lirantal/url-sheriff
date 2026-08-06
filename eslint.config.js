@@ -1,15 +1,34 @@
+import js from '@eslint/js'
+import { defineConfig, globalIgnores } from 'eslint/config'
+import pluginN from 'eslint-plugin-n'
 import pluginSecurity from 'eslint-plugin-security'
-import neostandard, { resolveIgnoresFromGitignore, plugins } from 'neostandard'
+import tseslint from 'typescript-eslint'
 
-export default [
-  ...neostandard({ ignores: resolveIgnoresFromGitignore() }),
-  plugins.n.configs['flat/recommended-script'],
+export default defineConfig([
+  globalIgnores([
+    '__tests__/**/*.ts',
+    'dist/**',
+    'coverage/**',
+    'node_modules/**',
+    'apm_modules/**',
+    '.cursor/**',
+    '.devcontainer/**',
+    '.github/**',
+    '.vscode/**',
+    '.gemini/**',
+    '.claude/**',
+    '.agents/**'
+  ]),
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  pluginN.configs['flat/recommended-script'],
   pluginSecurity.configs.recommended,
   {
     rules: {
-      'no-process-exit': 'warn',
-      'node/no-unsupported-features': 'off',
-      'node/no-unpublished-require': 'off',
+      'n/no-process-exit': 'warn',
+      'n/no-unsupported-features': 'off',
+      'n/no-unpublished-require': 'off',
+      'n/no-missing-import': ['error', { allowModules: ['ipaddr.js'] }],
       'security/detect-non-literal-fs-filename': 'error',
       'security/detect-unsafe-regex': 'error',
       'security/detect-buffer-noassert': 'error',
@@ -22,11 +41,11 @@ export default [
       'security/detect-possible-timing-attacks': 'error',
       'security/detect-pseudoRandomBytes': 'error',
       'space-before-function-paren': 'off',
-      'object-curly-spacing': 'off',
+      'object-curly-spacing': 'off'
     },
     languageOptions: {
       ecmaVersion: 2024,
-      sourceType: 'module',
-    },
-  },
-]
+      sourceType: 'module'
+    }
+  }
+])

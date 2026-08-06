@@ -67,7 +67,7 @@ export default class URLSheriff {
         return new URL(url)
       } catch (error) {
         debug('Failed to parse URL string: %s', url)
-        throw new Error('Invalid URL provided')
+        throw new Error('Invalid URL provided', { cause: error })
       }
     }
 
@@ -165,7 +165,7 @@ export default class URLSheriff {
     // is a private IP address
     debug('Hostname is not an IP address, resolving via DNS: %s', hostname)
 
-    let ipAddressList: string[] = []
+    let ipAddressList: string[]
     if (this.#resolver) {
       debug('Using custom DNS resolver')
       ipAddressList = await this.resolveHostnameViaServers(hostname)
