@@ -90,5 +90,6 @@
   },
   "dependencies": {
     "ipaddr.js": "^2.2.0"
-  }
+  },
+  "packageManager": "npm@11.21.0"
 }
